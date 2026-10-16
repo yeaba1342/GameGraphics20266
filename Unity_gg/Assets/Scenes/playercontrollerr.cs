@@ -1,20 +1,28 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static UnityEngine.LowLevelPhysics2D.PhysicsLayers;
-
+using UnityEngine.SceneManagement;
+using TMPro;  
 public class PlayerController : MonoBehaviour
 {
-public string playerName = "player";
+    public string playerName = "player";
+    public string nextSceneName = "Stage2";
     public int hp = 100;
     public float moveSpeed = 5f;
     public float jumpPower = 8f;
     public Vector3 startPosition;
     public Transform visual;
+    public GameObject gameOverPanel;
     private Rigidbody2D rb;
     private bool isGrounded = false;
     public int lives = 3;
     private bool isGameOver = false;
     private float facing = 1f;
+    public TMP_Text livesText;
+    private Vector2 moveInput;
+
+    public float fallLimit = -10f;
+    public Vector2 airScale = new Vector2(0.8f, 1.2f);
+
 
     void OnCollisionEnter2D(Collision2D collision)
     {
@@ -34,49 +42,35 @@ public string playerName = "player";
         }
     }
 
-
-    private Vector2 moveInput;
+        
+    
 
     void Start()
-
     {
-        {
             rb = GetComponent<Rigidbody2D>();
             transform.position = startPosition;
-            Debug.Log(playerName + " 시작. 목숨 " + lives);
-        }
+             livesText.text = "LIFE " + lives;
 
-        if (hp >= 70)
-        {
-            Debug.Log("건강");
-        }
-        else if (hp >= 30)
-        {
-            Debug.Log("주의");
-        }
-        else
-        {
-            Debug.Log("위험");
-        }
-
-
-        Debug.Log(playerName + " 시작. 체력 " + hp);
-        Debug.Log(playerName + " 시작. 체력 " + hp);
-        Debug.Log("피격 후 체력 " + (hp - 30));
-        Debug.Log("달리기 속도 " + moveSpeed * 2);
-        Debug.Log("10 / 4 = " + 10 / 4);
-
-
-        Debug.Log("ㅎㅇㅎㅇ");
     }
-    public Vector2 airScale = new Vector2(0.8f, 1.2f);
-   
+    void LoseLife()
+    {
+        lives -= 1;
+        transform.position = startPosition;
+        rb.linearVelocity = Vector2.zero;
+        livesText.text = "LIFE " + lives;
 
+        if (lives <= 0)
+        {
+            isGameOver = true;
+           gameOverPanel.SetActive(true);
+        }
+    }
 
     void OnMove(InputValue value)
-  {
-    moveInput = value.Get<Vector2>();
-    if (moveInput.x > 0) 
+    {
+        moveInput = value.Get<Vector2>();
+
+        if (moveInput.x > 0) 
         { 
             facing = 1f; 
         }
@@ -84,7 +78,7 @@ public string playerName = "player";
         { 
             facing = -1f;
         }
-  }
+    }
  
 
     void OnJump(InputValue value)
@@ -93,40 +87,21 @@ public string playerName = "player";
         {
             Debug.Log("점프!");
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpPower);
-
-
-
         }
     }
 
-    public float fallLimit = -10f;
     void Update()
     {
         if (!isGameOver)
-
-            // Debug.Log("Update");
-            transform.Translate(Vector3.right * moveInput.x * moveSpeed * Time.deltaTime);
-         // 아래 낙사 if 블록은 그대로
+        {
+        transform.Translate(Vector3.right * moveInput.x * moveSpeed * Time.deltaTime);
+        }
 
         if (transform.position.y < fallLimit)
-    {
-            {
-                lives -= 1;
-                transform.position = startPosition;
-                rb.linearVelocity = Vector2.zero;
-                Debug.Log("낙사. 남은 목숨 " + lives);
+        {
+            LoseLife();
+        }
 
-                if (lives <= 0)
-                {
-                    isGameOver = true;
-                    Debug.Log("게임 오버");
-                }
-            }
-
-            transform.position = startPosition;
-      rb.linearVelocity = Vector2.zero;
-      Debug.Log("낙사");
-    }
         if (isGrounded)
         { visual.localScale = new Vector3(facing, 1f, 1f); }
         else
@@ -136,6 +111,21 @@ public string playerName = "player";
         }
 
     }
-}
 
+ private void OnTriggerEnter2D(Collider2D collision)
+   {
+        if(collision.CompareTag("Goal"))
+        {
+           SceneManager.LoadScene(nextSceneName);
+
+        }
+
+        if (collision.CompareTag("Trap"))
+        {
+            LoseLife();
+        }
+
+    }
+}
+    
 
